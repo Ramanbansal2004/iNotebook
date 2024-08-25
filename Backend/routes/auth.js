@@ -11,6 +11,7 @@ router.post('/createUser', [
     body('email', 'Enter a valid email').isEmail(), 
     body('password', 'Password must have atleast 5 chracters').isLength({min: 5}),
 ],async (req, res) => {
+    let success = false;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.send({ errors: errors.array()});
@@ -18,7 +19,7 @@ router.post('/createUser', [
     try{
     let user =await User.findOne({email: req.body.email });
     if(user){
-        return res.status(400).json({error: "Email already in use"})
+        return res.status(400).json({success, error: "Email already in use"})
     }
     const salt= await bcrypt.genSalt(10);
     const secPass = await bcrypt.hash(req.body.password, salt);
@@ -37,7 +38,8 @@ router.post('/createUser', [
         }
     }
     const authtoken= jwt.sign(data, jwt_token);
-    res.json({authtoken})
+    success=true;
+    res.json({success, authtoken})
     }catch(error){
         console.error(error.message);
         res.status(500).send("Some error occured");
@@ -50,7 +52,7 @@ router.post('/login', [
 ],async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).send({ errors: errors.array()});
+      return res.status(400).send({success, errors: errors.array()});
     }
     const {email, password} = req.body;
     try {
@@ -69,7 +71,8 @@ router.post('/login', [
             }
         }
         const athtoken= jwt.sign(data, jwt_token);
-        res.json({athtoken});
+        success=true;
+        res.json({success, athtoken});
     } catch (error) {
         console.error(error.message);
         res.status(500).send("Internal Server Error");
